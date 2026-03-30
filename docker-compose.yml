@@ -1,0 +1,30 @@
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      # Comma-separated list is supported by backend.
+      ALLOWED_ORIGINS: "http://localhost:5173"
+      # Set these in your shell or in an .env file next to docker-compose.yml.
+      # DATABASE_URL: "postgresql+asyncpg://..."
+      # GROQ_API_KEY: "..."
+      VITE_API_URL: "http://localhost:8000"
+    env_file:
+      - ./docker.env
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: "http://localhost:8000"
+    ports:
+      - "5173:80"
+    restart: unless-stopped
+    depends_on:
+      - backend
+

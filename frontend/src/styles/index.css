@@ -1,0 +1,10 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* SF Pro / Inter не подгружаем специально в прототипе; оставляем дефолтные шрифты системы. */
+html {
+  color-scheme: dark;
+  font-family: Inter, ui-sans-serif, system-ui;
+}
+

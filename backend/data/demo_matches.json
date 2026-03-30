@@ -1,0 +1,33 @@
+[
+  {
+    "id": "match_chicago_barca_2022",
+    "title": "Chicago Fire FC vs FC Barcelona | MLS Friendly",
+    "category": "football",
+    "sport": "football",
+    "status": "live",
+    "stream_url": "https://www.youtube.com/embed/Dz_XaMlDt-I?start=355&autoplay=1&mute=1",
+    "startTimeUnix": 1711891200,
+    "type": "youtube",
+    "timeline": [
+      { "video_time_seconds": 355, "text": "00:00 — Свисток! Матч начался" },
+      { "video_time_seconds": 1090, "text": "18:10 — ГОООЛ! 0-1 (Обамеянг / Барселона)" },
+      { "video_time_seconds": 1690, "text": "28:10 — ГОООЛ! 0-2 (Педро / Барселона)" },
+      { "video_time_seconds": 3695, "text": "1:01:35 — ГОООЛ! 1-2 (Chicago Fire сокращает разрыв)" }
+    ]
+  },
+  {
+    "id": "demo_dota2_blast",
+    "title": "[RU] BLAST Slam IV: Tundra vs Falcons",
+    "category": "dota2",
+    "sport": "dota2",
+    "status": "live",
+    "stream_url": "https://www.youtube.com/embed/Z6yqxkoER80?autoplay=1&mute=1",
+    "startTimeUnix": 1711891200,
+    "type": "youtube",
+    "timeline": [
+      { "video_time_seconds": 75, "text": "1:15 — Первый килл (FB)" },
+      { "video_time_seconds": 455, "text": "7:35 — Рошан пал" },
+      { "video_time_seconds": 3750, "text": "1:02:30 — Трон падает. GG!" }
+    ]
+  }
+]

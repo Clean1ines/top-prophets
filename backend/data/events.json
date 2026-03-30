@@ -1,0 +1,70 @@
+{
+  "match_1": [
+    {
+      "id": "e_1_goal",
+      "type": "goal",
+      "timestamp": 12.0,
+      "pointValue": 10,
+      "window": { "secondsBefore": 5, "secondsAfter": 5 }
+    },
+    {
+      "id": "e_2_shot",
+      "type": "shot",
+      "timestamp": 22.0,
+      "pointValue": 6,
+      "window": { "secondsBefore": 4, "secondsAfter": 4 }
+    },
+    {
+      "id": "e_3_pass",
+      "type": "pass",
+      "timestamp": 31.0,
+      "pointValue": 4,
+      "window": { "secondsBefore": 3, "secondsAfter": 3 }
+    },
+    {
+      "id": "e_4_save",
+      "type": "save",
+      "timestamp": 41.5,
+      "pointValue": 5,
+      "window": { "secondsBefore": 4, "secondsAfter": 4 }
+    },
+    {
+      "id": "e_5_foul",
+      "type": "foul",
+      "timestamp": 52.0,
+      "pointValue": 2,
+      "window": { "secondsBefore": 3, "secondsAfter": 5 }
+    }
+  ],
+  "match_2": [
+    {
+      "id": "m2_e_1_goal",
+      "type": "goal",
+      "timestamp": 9.0,
+      "pointValue": 8,
+      "window": { "secondsBefore": 5, "secondsAfter": 5 }
+    },
+    {
+      "id": "m2_e_2_shot",
+      "type": "shot",
+      "timestamp": 18.0,
+      "pointValue": 5,
+      "window": { "secondsBefore": 4, "secondsAfter": 4 }
+    },
+    {
+      "id": "m2_e_3_pass",
+      "type": "pass",
+      "timestamp": 27.0,
+      "pointValue": 3,
+      "window": { "secondsBefore": 3, "secondsAfter": 3 }
+    },
+    {
+      "id": "m2_e_4_other",
+      "type": "other",
+      "timestamp": 36.0,
+      "pointValue": 2,
+      "window": { "secondsBefore": 4, "secondsAfter": 4 }
+    }
+  ]
+}
+

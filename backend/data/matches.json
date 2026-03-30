@@ -1,0 +1,25 @@
+[
+  {
+    "id": "mls-live-1",
+    "title": "MLS Matchday Live (Football)",
+    "type": "youtube",
+    "streamId": "live",
+    "channelHandle": "@mls",
+    "category": "football"
+  },
+  {
+    "id": "dota-pro-1",
+    "title": "Dota 2 Pro Circuit",
+    "type": "twitch",
+    "streamId": "betboom_ru",
+    "category": "dota2"
+  },
+  {
+    "id": "cs-pro-1",
+    "title": "CS2 ESL Pro League",
+    "type": "twitch",
+    "streamId": "esl_csgo",
+    "category": "cs2"
+  }
+]
+
