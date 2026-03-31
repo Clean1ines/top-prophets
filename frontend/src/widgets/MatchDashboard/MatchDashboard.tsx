@@ -28,13 +28,9 @@ function MatchTypeBadge({ match }: { match: Match }) {
 export default function MatchDashboard() {
   const matches = useMatchStore((s) => s.matches)
   const activeMatchId = useMatchStore((s) => s.activeMatchId)
-  const setMatches = useMatchStore((s) => s.setMatches)
-  const setActiveMatchId = useMatchStore((s) => s.setActiveMatchId)
-  const clearActiveMatch = useMatchStore((s) => s.clearActiveMatch)
-  const [tab, setTab] = useState<'dota2' | 'football'>('dota2')
+  
+  const [tab, setTab] = useState<'dota2' | 'football'>('football')
   const [now, setNow] = useState(() => Date.now())
-
-  const demoMode = import.meta.env.VITE_DEMO_MODE === '1'
 
   useEffect(() => {
     const t = window.setInterval(() => setNow(Date.now()), 1000)
@@ -46,35 +42,33 @@ export default function MatchDashboard() {
 
     async function load() {
       try {
-        // ИСПРАВЛЕНО: Используем fetchMatchesByCategory для точной фильтрации
         const res = await fetchMatchesByCategory(tab)
         if (cancelled) return
-        setMatches(res.matches)
         
-        if (res.matches.length > 0) {
-          const stillActive = activeMatchId && res.matches.some((m) => m.id === activeMatchId)
-          if (!stillActive) {
-            setActiveMatchId(res.matches[0].id)
+        useMatchStore.setState((s) => {
+          let nextActiveId = s.activeMatchId
+          // If we don't have an active match for this tab, or the active match isn't in this list, pick the first one
+          if (res.matches.length > 0) {
+              const stillActive = nextActiveId && res.matches.some((m) => m.id === nextActiveId)
+              if (!stillActive) {
+                  nextActiveId = res.matches[0].id
+              }
+          } else {
+              nextActiveId = null
           }
-        } else {
-          clearActiveMatch()
-        }
+          return { matches: res.matches, activeMatchId: nextActiveId }
+        })
+
       } catch (err) {
         if (!cancelled) {
           console.error("Dashboard load error:", err)
-          setMatches([])
-          clearActiveMatch()
+          useMatchStore.setState({ matches: [], activeMatchId: null })
         }
       }
     }
 
     load()
-    const t = window.setInterval(load, 30000)
-    return () => {
-      cancelled = true
-      window.clearInterval(t)
-    }
-  }, [tab, setMatches, setActiveMatchId, clearActiveMatch, activeMatchId, demoMode])
+  }, [tab])
 
   function formatHMS(totalSeconds: number) {
     const safe = Math.max(0, Math.floor(totalSeconds))
@@ -82,6 +76,11 @@ export default function MatchDashboard() {
     const m = Math.floor((safe % 3600) / 60)
     const s = safe % 60
     return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
+  }
+
+  if (!matches || matches.length === 0) {
+    // Only fetch once logic handles missing data
+    return null
   }
 
   return (
@@ -92,7 +91,7 @@ export default function MatchDashboard() {
             Доступные трансляции
           </Typography>
           <Typography as="h2" variant="h2" className="text-lg md:text-xl">
-            {matches.length ? matches.length : '—'}
+            {matches.length}
           </Typography>
         </div>
         <div className="hidden sm:block text-white/50 text-sm">Выбери матч</div>
@@ -100,16 +99,16 @@ export default function MatchDashboard() {
 
       <div className="mt-3 flex gap-2">
         <ActionButton
-          className={tab === 'dota2' ? 'bg-white/20 border-white/30' : 'bg-white/5 hover:bg-white/10'}
-          onClick={() => setTab('dota2')}
-        >
-          Dota 2
-        </ActionButton>
-        <ActionButton
           className={tab === 'football' ? 'bg-white/20 border-white/30' : 'bg-white/5 hover:bg-white/10'}
           onClick={() => setTab('football')}
         >
           Football
+        </ActionButton>
+        <ActionButton
+          className={tab === 'dota2' ? 'bg-white/20 border-white/30' : 'bg-white/5 hover:bg-white/10'}
+          onClick={() => setTab('dota2')}
+        >
+          Dota 2
         </ActionButton>
       </div>
 
@@ -142,7 +141,7 @@ export default function MatchDashboard() {
                   </div>
                   <div className="mt-1 text-xs text-white/60">
                     {secondsLeft === null
-                      ? 'TBD'
+                      ? 'В эфире'
                       : secondsLeft <= 0
                         ? 'В эфире'
                         : formatHMS(secondsLeft)}
@@ -150,7 +149,7 @@ export default function MatchDashboard() {
                 </div>
                 <ActionButton
                   className="min-w-[92px] bg-white/5 hover:bg-white/10"
-                  onClick={() => setActiveMatchId(m.id)}
+                  onClick={() => useMatchStore.setState({ activeMatchId: m.id })}
                   disabled={active}
                 >
                   {active ? 'Актив' : 'Открыть'}
@@ -160,10 +159,6 @@ export default function MatchDashboard() {
           )
         })}
       </div>
-
-      {matches.length === 0 ? (
-        <div className="mt-3 h-24 animate-pulse rounded-2xl bg-white/5" />
-      ) : null}
     </GlassCard>
   )
 }

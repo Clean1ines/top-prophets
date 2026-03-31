@@ -8,13 +8,6 @@ import { useMatchStore } from '../../entities/match/store/useMatchStore'
 import { useUserStore } from '../../entities/user/store/useUserStore'
 import { predictMatch } from '../../shared/api/matchApi'
 import { useToast } from '../../shared/ui/Toast/ToastProvider'
-import { addScore } from '../../shared/api/leaderboardApi'
-
-type EventType = 'Goal' | 'First Blood' | 'Roshan Kill'
-
-function pad2(n: number) {
-  return String(n).padStart(2, '0')
-}
 
 function sanitizeDigits(value: string) {
   return value.replace(/[^\d]/g, '')
@@ -24,7 +17,6 @@ export default function PredictMomentum() {
   const activeMatch = useMatchStore((s) => s.getActiveMatch())
   const username = useUserStore((s) => s.profile.username)
   const setUsername = useUserStore((s) => s.setUsername)
-  const addScoreStore = useUserStore((s) => s.addScore)
   const { showToast } = useToast()
 
   const [pending, setPending] = useState(false)
@@ -32,18 +24,20 @@ export default function PredictMomentum() {
   const [nicknameModalOpen, setNicknameModalOpen] = useState(false)
   const [pendingNickname, setPendingNickname] = useState('')
 
-  const [eventType, setEventType] = useState<EventType>('Goal')
+  const [eventTypeFootball, setEventTypeFootball] = useState('Goal')
+  const [eventTypeDota, setEventTypeDota] = useState('First Blood')
   const [minutes, setMinutes] = useState('0')
-  const [seconds, setSeconds] = useState('0')
 
-  const canSubmit = useMemo(() => Boolean(activeMatch && !pending), [activeMatch, pending])
+  const isFootball = activeMatch?.sport === 'football' || activeMatch?.category === 'football'
+  const eventType = isFootball ? eventTypeFootball : eventTypeDota
+
+  const canSubmit = useMemo(() => Boolean(activeMatch && !pending && minutes !== ''), [activeMatch, pending, minutes])
 
   const onSubmit = async (e: FormEvent) => {
     e.preventDefault()
     if (!activeMatch) return
 
-    const stored = window.localStorage.getItem('tp_nickname') || ''
-    const isGuest = !stored && (!username || username === 'guest')
+    const isGuest = (!username || username === 'guest')
     if (isGuest) {
       setNicknameModalOpen(true)
       setPendingNickname('')
@@ -51,40 +45,37 @@ export default function PredictMomentum() {
     }
 
     const mm = Math.max(0, Number(sanitizeDigits(minutes)) || 0)
-    const ssRaw = Math.max(0, Number(sanitizeDigits(seconds)) || 0)
-    const ss = Math.min(59, ssRaw)
-    const predictedTimeSeconds = mm * 60 + ss
 
     setPending(true)
     setToast(null)
     try {
-      await predictMatch({
+      const res = await predictMatch({
         matchId: activeMatch.id,
         eventType,
-        predictedTimeSeconds,
-        username,
+        predictedMinute: mm,
+        username: username,
       })
 
-      // Award 1 point for the prediction
-      try {
-        const result = await addScore(username)
-        if (result.ok) {
-          addScoreStore(1)
-          showToast({
-            title: 'Угадал!',
-            description: `+1 очко в рейтинг (теперь ${result.newScore})`,
-          })
-        }
-      } catch (scoreErr) {
-        console.warn('Failed to add score:', scoreErr)
-        // Still show success for prediction but no score update
+      if (res.success) {
+        useUserStore.setState((s) => ({
+          profile: { ...s.profile, score: res.score }
+        }))
         showToast({
-          title: 'Прогноз принят',
-          description: 'Ошибка при начислении очков, попробуйте позже.',
+          title: 'Угадал!',
+          description: `+5 очков! Текущий счет: ${res.score}`,
         })
+        setToast(`Точный прогноз!`)
+      } else {
+        useUserStore.setState((s) => ({
+          profile: { ...s.profile, score: res.score }
+        }))
+        showToast({
+          title: res.message === 'Ты уже получал очки за это событие!' ? 'Дубликат' : 'Мимо!',
+          description: res.message,
+        })
+        setToast(res.message)
       }
-
-      setToast(`Прогноз зафиксирован на ${pad2(mm)}:${pad2(ss)}!`)
+      
       window.setTimeout(() => setToast(null), 1800)
     } catch {
       setToast('Ошибка сети. Попробуй снова.')
@@ -104,20 +95,20 @@ export default function PredictMomentum() {
             animate={{ opacity: 1, y: -14, scale: 1 }}
             exit={{ opacity: 0, y: -22, scale: 0.98 }}
             transition={{ duration: 0.35, ease: 'easeOut' }}
-            className="pointer-events-none absolute left-1/2 top-3 -translate-x-1/2 rounded-2xl border border-white/10 bg-white/[0.06] px-4 py-2 text-sm font-semibold text-accent-gold shadow-2xl"
+            className="pointer-events-none absolute left-1/2 top-3 -translate-x-1/2 rounded-2xl border border-white/10 bg-white/[0.06] px-4 py-2 text-sm font-semibold text-accent-gold shadow-2xl z-10"
           >
             {toast}
           </motion.div>
         ) : null}
       </AnimatePresence>
 
-      <form className="space-y-3" onSubmit={onSubmit}>
+      <form className="space-y-4" onSubmit={onSubmit}>
         <div>
           <Typography as="h2" variant="h2" className="text-accent-gold">
-            Оракул времени
+            Предсказание
           </Typography>
           <Typography variant="small" className="text-white/70">
-            Зафиксируй прогноз заранее
+            Угадай точную минуту события
           </Typography>
         </div>
 
@@ -125,56 +116,47 @@ export default function PredictMomentum() {
           <Typography variant="small" className="text-white/65">
             Событие
           </Typography>
-          <select
-            value={eventType}
-            onChange={(e) => setEventType(e.target.value as EventType)}
-            className="w-full rounded-3xl bg-white/[0.03] border border-white/10 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-accent-gold/50"
-          >
-            <option value="Goal">Гол</option>
-            <option value="First Blood">First Blood</option>
-            <option value="Roshan Kill">Убийство Рошана</option>
-          </select>
+          {isFootball ? (
+              <select
+                value={eventTypeFootball}
+                onChange={(e) => setEventTypeFootball(e.target.value)}
+                className="w-full rounded-3xl bg-white/[0.03] border border-white/10 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-accent-gold/50"
+              >
+                <option value="Goal">Goal (Гол)</option>
+              </select>
+          ) : (
+            <select
+                value={eventTypeDota}
+                onChange={(e) => setEventTypeDota(e.target.value)}
+                className="w-full rounded-3xl bg-white/[0.03] border border-white/10 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-accent-gold/50"
+              >
+                <option value="First Blood">First Blood</option>
+                <option value="Roshan Kill">Убийство Рошана</option>
+                <option value="Game End">Конец игры</option>
+              </select>
+          )}
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
-          <div className="space-y-2">
+        <div className="space-y-2">
             <Typography variant="small" className="text-white/65">
-              Минуты (MM)
+              Минута (число)
             </Typography>
             <input
               inputMode="numeric"
               pattern="[0-9]*"
               value={minutes}
               onChange={(e) => setMinutes(sanitizeDigits(e.target.value))}
+              placeholder="Введите минуту (например, 15)"
               className="w-full rounded-3xl bg-white/[0.03] border border-white/10 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-accent-gold/50"
             />
-          </div>
-          <div className="space-y-2">
-            <Typography variant="small" className="text-white/65">
-              Секунды (SS, 0-59)
-            </Typography>
-            <input
-              inputMode="numeric"
-              pattern="[0-9]*"
-              value={seconds}
-              onChange={(e) => {
-                const digits = sanitizeDigits(e.target.value)
-                const num = Number(digits)
-                if (!digits) return setSeconds('0')
-                if (!Number.isFinite(num)) return
-                setSeconds(String(Math.min(59, Math.max(0, num))))
-              }}
-              className="w-full rounded-3xl bg-white/[0.03] border border-white/10 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-accent-gold/50"
-            />
-          </div>
         </div>
 
         <ActionButton
           type="submit"
-          className="w-full bg-white/10 hover:bg-white/20 border-white/20 text-accent-gold"
+          className="w-full bg-white/10 hover:bg-white/20 border-white/20 text-accent-gold mt-2 py-3"
           disabled={!canSubmit}
         >
-          {pending ? 'Фиксируем...' : 'Сделать прогноз'}
+          {pending ? 'Проверка...' : 'Сделать прогноз'}
         </ActionButton>
       </form>
 
@@ -194,16 +176,16 @@ export default function PredictMomentum() {
               className="w-full max-w-sm rounded-3xl border border-white/15 bg-white/[0.06] backdrop-blur-xl px-5 py-6 shadow-[0_20px_60px_rgba(0,0,0,0.75)]"
             >
               <Typography as="h2" variant="h2" className="mb-1 text-base text-white">
-                Присоединяйся к действию
+                Как тебя называть?
               </Typography>
               <Typography variant="small" className="mb-4 text-white/70">
-                Введи никнейм, под которым тебя будет видно в рейтинге.
+                Введи никнейм для лидерборда.
               </Typography>
               <input
                 autoFocus
                 value={pendingNickname}
                 onChange={(e) => setPendingNickname(e.target.value.slice(0, 24))}
-                placeholder="Например, clutch_master"
+                placeholder="Твой ник"
                 className="w-full rounded-3xl bg-white/[0.03] border border-white/15 px-4 py-3 text-sm text-white outline-none focus:ring-2 focus:ring-accent-gold/60"
               />
               <div className="mt-4 flex justify-end gap-2">
@@ -219,13 +201,12 @@ export default function PredictMomentum() {
                   className="rounded-3xl bg-white text-xs font-semibold px-4 py-2 text-black hover:bg-white/90"
                   onClick={() => {
                     const name = pendingNickname.trim()
-                    if (!name) return
-                    window.localStorage.setItem('tp_nickname', name)
+                    if (!name || name === 'guest') return
                     setUsername(name)
                     setNicknameModalOpen(false)
                   }}
                 >
-                  Join Action
+                  Подтвердить
                 </button>
               </div>
             </motion.div>
