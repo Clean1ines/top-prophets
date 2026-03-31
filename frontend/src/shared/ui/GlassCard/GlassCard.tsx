@@ -6,11 +6,12 @@ type GlassCardProps = {
   className?: string
 }
 
+/** Stripped-down card: optional thin border, no blur, no heavy shadow. */
 export default function GlassCard({ children, className }: GlassCardProps) {
   return (
     <section
       className={cn(
-        'rounded-3xl backdrop-blur-xl bg-white/[0.03] border border-white/[0.08] shadow-2xl',
+        'border border-white/[0.08] bg-transparent',
         'p-4',
         className,
       )}
@@ -19,4 +20,3 @@ export default function GlassCard({ children, className }: GlassCardProps) {
     </section>
   )
 }
-
