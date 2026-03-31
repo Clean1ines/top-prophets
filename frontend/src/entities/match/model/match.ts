@@ -1,5 +1,10 @@
 export type MatchType = 'twitch' | 'youtube' | 'text' | 'resolved'
 
+export type TimelineEvent = {
+  video_time_seconds: number
+  text: string
+}
+
 export type Match = {
   id: string
   title: string
@@ -16,5 +21,5 @@ export type Match = {
   team2?: string
   apiFixtureId?: string | null
   category?: string
+  timeline?: TimelineEvent[]
 }
-

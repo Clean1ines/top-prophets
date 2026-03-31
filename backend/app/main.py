@@ -50,6 +50,10 @@ class GoogleAuthRequest(BaseModel):
     token: str
 
 
+class AddScoreRequest(BaseModel):
+    username: str
+
+
 def _google_client_id() -> str:
     return (os.getenv("Google_Client_ID") or os.getenv("GOOGLE_CLIENT_ID") or "").strip()
 
@@ -342,10 +346,26 @@ def create_app() -> FastAPI:
             stream = await resolve_stream_for_match_id(matchId)
             return {"ok": True, "matchId": matchId, "streamUrl": stream}
 
+    @app.post(f"{prefix}/api/score/add")
+    async def add_score(req: AddScoreRequest):
+        """
+        Increment the user's score (total_xp) by 1.
+        Creates a new user with the given username if it doesn't exist.
+        """
+        username = req.username.strip()
+        if not username:
+            return {"ok": False, "error": "username required"}
+
+        async with session_scope() as session:
+            user = await get_or_create_user(session, username=username)
+            user.total_xp = (user.total_xp or 0) + 1
+            await session.commit()
+            return {"ok": True, "username": username, "newScore": user.total_xp}
+
     @app.get(f"{prefix}/api/leaderboard")
     async def get_leaderboard():
         async with session_scope() as session:
-            q = select(User).order_by(User.total_xp.desc()).limit(20)
+            q = select(User).order_by(User.total_xp.desc()).limit(10)
             res = await session.execute(q)
             users = list(res.scalars().all())
             return {

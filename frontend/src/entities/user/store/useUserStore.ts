@@ -5,6 +5,7 @@ type UserStore = {
   profile: UserProfile
   setUsername: (username: string) => void
   applyHit: (record: Omit<HitRecord, 'timestamp'> & { timestamp?: number }) => void
+  addScore: (points?: number) => void
 }
 
 export const useUserStore = create<UserStore>((set) => ({
@@ -40,5 +41,12 @@ export const useUserStore = create<UserStore>((set) => ({
         },
       }
     }),
-}))
 
+  addScore: (points = 1) =>
+    set((s) => ({
+      profile: {
+        ...s.profile,
+        score: s.profile.score + points,
+      },
+    })),
+}))

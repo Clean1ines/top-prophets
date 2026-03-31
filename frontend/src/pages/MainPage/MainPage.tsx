@@ -68,9 +68,7 @@ export default function MainPage() {
             <Typography as="h2" variant="h2" className="text-accent-gold">
               TOP-PROPHETS
             </Typography>
-            <Typography variant="small" className="text-white/65">
-              Прототип · FSD слои · Live-попадания по таймкоду
-            </Typography>
+           
           </div>
           <div className="flex items-center gap-3">
             <div className="hidden md:block text-sm text-white/60">{loading ? 'Инициализация...' : `${matches.length} матчей`}</div>

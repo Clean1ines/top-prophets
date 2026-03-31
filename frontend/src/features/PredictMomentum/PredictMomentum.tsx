@@ -8,6 +8,7 @@ import { useMatchStore } from '../../entities/match/store/useMatchStore'
 import { useUserStore } from '../../entities/user/store/useUserStore'
 import { predictMatch } from '../../shared/api/matchApi'
 import { useToast } from '../../shared/ui/Toast/ToastProvider'
+import { addScore } from '../../shared/api/leaderboardApi'
 
 type EventType = 'Goal' | 'First Blood' | 'Roshan Kill'
 
@@ -23,6 +24,7 @@ export default function PredictMomentum() {
   const activeMatch = useMatchStore((s) => s.getActiveMatch())
   const username = useUserStore((s) => s.profile.username)
   const setUsername = useUserStore((s) => s.setUsername)
+  const addScoreStore = useUserStore((s) => s.addScore)
   const { showToast } = useToast()
 
   const [pending, setPending] = useState(false)
@@ -63,12 +65,27 @@ export default function PredictMomentum() {
         username,
       })
 
+      // Award 1 point for the prediction
+      try {
+        const result = await addScore(username)
+        if (result.ok) {
+          addScoreStore(1)
+          showToast({
+            title: 'Угадал!',
+            description: `+1 очко в рейтинг (теперь ${result.newScore})`,
+          })
+        }
+      } catch (scoreErr) {
+        console.warn('Failed to add score:', scoreErr)
+        // Still show success for prediction but no score update
+        showToast({
+          title: 'Прогноз принят',
+          description: 'Ошибка при начислении очков, попробуйте позже.',
+        })
+      }
+
       setToast(`Прогноз зафиксирован на ${pad2(mm)}:${pad2(ss)}!`)
       window.setTimeout(() => setToast(null), 1800)
-      showToast({
-        title: 'Событие подтверждено ИИ!',
-        description: '+500 XP начислено на твой аккаунт.',
-      })
     } catch {
       setToast('Ошибка сети. Попробуй снова.')
       window.setTimeout(() => setToast(null), 1800)
@@ -218,4 +235,3 @@ export default function PredictMomentum() {
     </GlassCard>
   )
 }
-

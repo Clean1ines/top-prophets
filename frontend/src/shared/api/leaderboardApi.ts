@@ -11,3 +11,7 @@ export async function fetchLeaderboard() {
   return data.entries
 }
 
+export async function addScore(username: string) {
+  const { data } = await http.post<{ ok: boolean; username: string; newScore: number }>('/api/score/add', { username })
+  return data
+}

@@ -4,6 +4,7 @@ import Typography from '../../shared/ui/Typography/Typography'
 import { useMatchStore } from '../../entities/match/store/useMatchStore'
 import { fetchLeaderboard, type LeaderboardEntry } from '../../shared/api/leaderboardApi'
 import { fetchLatestEvents, type LatestEvent } from '../../shared/api/eventsApi'
+import { useUserStore } from '../../entities/user/store/useUserStore'
 
 function pad2(n: number) {
   return String(n).padStart(2, '0')
@@ -19,6 +20,7 @@ function formatMMSS(totalSeconds: number) {
 export default function LiveStats() {
   const activeMatch = useMatchStore((s) => s.getActiveMatch())
   const activeMatchId = activeMatch?.id ?? null
+  const currentUsername = useUserStore((s) => s.profile.username)
 
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([])
   const [events, setEvents] = useState<LatestEvent[]>([])
@@ -69,7 +71,6 @@ export default function LiveStats() {
               {activeMatch ? activeMatch.title : '—'}
             </Typography>
           </div>
-          <div className="text-sm text-white/70 text-right">События подтягиваются автоматически</div>
         </div>
 
         <div className="rounded-2xl border border-white/10 bg-white/5 p-3">
@@ -99,7 +100,12 @@ export default function LiveStats() {
           </Typography>
           <div className="mt-2 space-y-1 text-sm">
             {leaderboard.slice(0, 6).map((e, idx) => (
-              <div key={e.id} className="flex items-center justify-between gap-3">
+              <div
+                key={e.id}
+                className={`flex items-center justify-between gap-3 ${
+                  e.username === currentUsername ? 'bg-white/10 rounded-lg px-2 py-1 -mx-2' : ''
+                }`}
+              >
                 <div className="flex items-center gap-2 min-w-0">
                   <div className="w-6 text-right text-white/50">{idx + 1}</div>
                   <div className="truncate">{e.username}</div>
@@ -114,4 +120,3 @@ export default function LiveStats() {
     </GlassCard>
   )
 }
-
