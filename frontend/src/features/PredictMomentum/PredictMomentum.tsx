@@ -3,6 +3,7 @@ import { useMemo, useRef, useState } from 'react'
 import { useMatchStore } from '../../entities/match/store/useMatchStore'
 import { useUserStore } from '../../entities/user/store/useUserStore'
 import { predictMatch } from '../../shared/api/matchApi'
+import { useToast } from '../../shared/ui/Toast/ToastProvider'
 
 function sanitizeDigits(value: string) {
   return value.replace(/[^\d]/g, '')
@@ -12,6 +13,7 @@ export default function PredictMomentum() {
   const activeMatch = useMatchStore((s) => s.getActiveMatch())
   const username = useUserStore((s) => s.profile.username)
   const setUsername = useUserStore((s) => s.setUsername)
+  const addSuccessfulPrediction = useUserStore((s) => s.addSuccessfulPrediction)
 
   const isFootball = activeMatch?.sport === 'football' || activeMatch?.category === 'football'
 
@@ -21,9 +23,7 @@ export default function PredictMomentum() {
 
   const [minutes, setMinutes] = useState('37')
   const [pending, setPending] = useState(false)
-  const [feedback, setFeedback] = useState<string | null>(null)
-  const [feedbackPositive, setFeedbackPositive] = useState(false)
-  const feedbackTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const { showToast } = useToast()
 
   // Inline nickname editing
   const [editingNick, setEditingNick] = useState(false)
@@ -34,12 +34,6 @@ export default function PredictMomentum() {
     [activeMatch, pending, minutes]
   )
 
-  const showFeedback = (msg: string, positive: boolean) => {
-    if (feedbackTimer.current) clearTimeout(feedbackTimer.current)
-    setFeedback(msg)
-    setFeedbackPositive(positive)
-    feedbackTimer.current = setTimeout(() => setFeedback(null), 1400)
-  }
 
   const onSubmit = async (e: FormEvent) => {
     e.preventDefault()
@@ -58,12 +52,25 @@ export default function PredictMomentum() {
         profile: { ...s.profile, score: res.score },
       }))
       if (res.success) {
-        showFeedback('+5', true)
+        addSuccessfulPrediction({ matchId: activeMatch.id, eventType, minute: mm })
+        showToast({ 
+          title: 'Prediction Confirmed', 
+          description: `+5 POINTS: ${eventType} @ ${mm}'`, 
+          type: 'success' 
+        })
       } else {
-        showFeedback('+0', false)
+        showToast({ 
+          title: 'Prediction Failed', 
+          description: 'INCORRECT GUESS (0 POINTS)', 
+          type: 'error' 
+        })
       }
     } catch {
-      showFeedback('err', false)
+      showToast({ 
+        title: 'System Error', 
+        description: 'Connection failed. Please retry.', 
+        type: 'error' 
+      })
     } finally {
       setPending(false)
     }
@@ -76,90 +83,77 @@ export default function PredictMomentum() {
   }
 
   return (
-    <form
-      onSubmit={onSubmit}
-      className="flex flex-col gap-0 border-t border-white/10 bg-black"
-    >
-      {/* Main control row */}
-      <div className="flex items-center gap-2 px-4 py-2 h-12">
-        {/* Event type select */}
-        {isFootball ? (
-          <select
-            value={eventTypeFootball}
-            onChange={(e) => setEventTypeFootball(e.target.value)}
-            className="h-8 rounded px-2 text-sm bg-white/5 border border-white/10 text-white outline-none focus:border-white/30 cursor-pointer"
+    <div className="border-t border-[#1f1f1f] bg-[#121212] px-4 py-5">
+      <form onSubmit={onSubmit} className="flex flex-col">
+        <div className="flex items-center gap-3">
+          {/* Event selector */}
+          <div className="relative">
+            {isFootball ? (
+              <select
+                value={eventTypeFootball}
+                onChange={(e) => setEventTypeFootball(e.target.value)}
+                className="h-12 px-4 bg-[#0b0b0b] border border-[#1f1f1f] rounded text-[#cfcfcf] text-sm focus:outline-none focus:border-[#d97706] cursor-pointer transition-colors"
+              >
+                <option value="Goal">Goal</option>
+              </select>
+            ) : (
+              <select
+                value={eventTypeDota}
+                onChange={(e) => setEventTypeDota(e.target.value)}
+                className="h-12 px-4 bg-[#0b0b0b] border border-[#1f1f1f] rounded text-[#cfcfcf] text-sm focus:outline-none focus:border-[#d97706] cursor-pointer transition-colors"
+              >
+                <option value="First Blood">First Blood</option>
+                <option value="Roshan Kill">Roshan Kill</option>
+                <option value="Game End">Game End</option>
+              </select>
+            )}
+          </div>
+
+          {/* Minute input */}
+          <input
+            type="number"
+            min={0}
+            max={120}
+            value={minutes}
+            onChange={(e) => setMinutes(sanitizeDigits(e.target.value))}
+            className="h-12 w-20 px-3 bg-[#0b0b0b] border border-[#1f1f1f] rounded text-white text-center text-lg font-semibold focus:outline-none focus:border-[#d97706] transition-colors"
+            placeholder="Min"
+          />
+
+          {/* Big Predict button */}
+          <button
+            type="submit"
+            disabled={!canSubmit}
+            className="h-12 px-8 bg-[#d97706] hover:bg-[#b45309] text-black font-bold rounded tracking-wide transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed uppercase"
           >
-            <option value="Goal">Goal</option>
-          </select>
-        ) : (
-          <select
-            value={eventTypeDota}
-            onChange={(e) => setEventTypeDota(e.target.value)}
-            className="h-8 rounded px-2 text-sm bg-white/5 border border-white/10 text-white outline-none focus:border-white/30 cursor-pointer"
-          >
-            <option value="First Blood">First Blood</option>
-            <option value="Roshan Kill">Roshan Kill</option>
-            <option value="Game End">Game End</option>
-          </select>
-        )}
-
-        {/* Minute input */}
-        <input
-          type="number"
-          min={0}
-          max={120}
-          value={minutes}
-          onChange={(e) => setMinutes(sanitizeDigits(e.target.value))}
-          className="h-8 w-16 rounded px-2 text-sm bg-white/5 border border-white/10 text-white outline-none focus:border-white/30 text-center"
-          placeholder="Min"
-        />
-
-        {/* Predict button */}
-        <button
-          type="submit"
-          disabled={!canSubmit}
-          className="h-8 px-4 rounded text-sm font-semibold bg-white text-black hover:bg-white/90 active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed transition-all"
-        >
-          {pending ? '·' : 'Predict'}
-        </button>
-
-        {/* Inline feedback – fixed width slot to avoid layout shift */}
-        <div className="w-10 flex items-center">
-          {feedback && (
-            <span
-              className={`text-sm font-bold animate-fade ${feedbackPositive ? 'text-green-400' : 'text-white/40'}`}
-              style={{ animation: 'fadeInOut 1.4s ease forwards' }}
-            >
-              {feedback}
-            </span>
-          )}
+            {pending ? '···' : 'Predict'}
+          </button>
         </div>
 
-        {/* Spacer */}
-        <div className="flex-1" />
-
-        {/* Nickname – secondary, inline editable */}
-        {editingNick ? (
-          <input
-            autoFocus
-            value={nickDraft}
-            onChange={(e) => setNickDraft(e.target.value.slice(0, 24))}
-            onBlur={commitNick}
-            onKeyDown={(e) => { if (e.key === 'Enter') commitNick() }}
-            className="h-8 w-32 rounded px-2 text-xs bg-white/5 border border-white/20 text-white outline-none"
-            placeholder="nickname"
-          />
-        ) : (
-          <button
-            type="button"
-            onClick={() => { setNickDraft(username); setEditingNick(true) }}
-            className="text-xs text-white/35 hover:text-white/60 transition-colors leading-none"
-            title="Edit nickname"
-          >
-            {username}
-          </button>
-        )}
-      </div>
-    </form>
+        {/* User context layer */}
+        <div className="mt-3 flex items-center gap-2 text-xs text-[#7a7a7a]">
+          <span>Predicting as</span>
+          {editingNick ? (
+            <input
+              autoFocus
+              value={nickDraft}
+              onChange={(e) => setNickDraft(e.target.value.slice(0, 24))}
+              onBlur={commitNick}
+              onKeyDown={(e) => { if (e.key === 'Enter') commitNick() }}
+              className="bg-[#0b0b0b] border-b border-[#d97706]/40 text-[#cfcfcf] outline-none px-1"
+            />
+          ) : (
+            <button
+              type="button"
+              onClick={() => { setNickDraft(username); setEditingNick(true) }}
+              className="text-[#cfcfcf] hover:text-white transition-colors flex items-center gap-1 group"
+            >
+              <span className="font-medium underline decoration-[#1f1f1f] underline-offset-4 group-hover:decoration-[#d97706]/40">{username}</span>
+              <span className="text-[#1f1f1f] group-hover:text-[#d97706] transition-colors">✎</span>
+            </button>
+          )}
+        </div>
+      </form>
+    </div>
   )
 }

@@ -1,11 +1,20 @@
 import { create } from 'zustand'
 import type { HitRecord, UserProfile } from '../model/user'
+import { fetchUserProfile } from '../../../shared/api/userApi'
+
+export type SuccessfulPrediction = {
+  matchId: string
+  eventType: string
+  minute: number
+}
 
 type UserStore = {
   profile: UserProfile
-  setUsername: (username: string) => void
+  successfulPredictions: SuccessfulPrediction[]
+  setUsername: (username: string) => Promise<void>
   applyHit: (record: Omit<HitRecord, 'timestamp'> & { timestamp?: number }) => void
   addScore: (points?: number) => void
+  addSuccessfulPrediction: (p: SuccessfulPrediction) => void
 }
 
 export const useUserStore = create<UserStore>((set) => ({
@@ -15,12 +24,44 @@ export const useUserStore = create<UserStore>((set) => ({
     lastHits: [],
   },
 
-  setUsername: (username) =>
+  successfulPredictions: [],
+
+  setUsername: async (username) => {
+    // Optimistic update
     set((s) => ({
-      profile: {
-        ...s.profile,
-        username,
-      },
+      profile: { ...s.profile, username }
+    }))
+
+    try {
+      const data = await fetchUserProfile(username)
+      // Parse backend IDs (matchId_minute_type) back to objects
+      const history: SuccessfulPrediction[] = data.guessed.map((id) => {
+        // Handle both legacy '_' and temporary ':' delimiters robustly
+        const delimiter = id.includes(':') ? ':' : '_'
+        const parts = id.split(delimiter)
+        const eventType = parts.pop() || ''
+        const minuteStr = parts.pop() || '0'
+        const matchId = parts.join(delimiter)
+        
+        return {
+          matchId,
+          minute: parseInt(minuteStr, 10),
+          eventType,
+        }
+      })
+
+      set({
+        profile: { username, score: data.score, lastHits: [] },
+        successfulPredictions: history,
+      })
+    } catch (e) {
+      console.error('Failed to sync user history:', e)
+    }
+  },
+
+  addSuccessfulPrediction: (p) =>
+    set((s) => ({
+      successfulPredictions: [...s.successfulPredictions, p],
     })),
 
   applyHit: (record) =>
@@ -30,9 +71,7 @@ export const useUserStore = create<UserStore>((set) => ({
         earnedPoints: record.earnedPoints,
         timestamp: record.timestamp ?? Date.now(),
       }
-
       const nextHits = [hit, ...s.profile.lastHits].slice(0, 8)
-
       return {
         profile: {
           ...s.profile,
@@ -44,9 +83,6 @@ export const useUserStore = create<UserStore>((set) => ({
 
   addScore: (points = 1) =>
     set((s) => ({
-      profile: {
-        ...s.profile,
-        score: s.profile.score + points,
-      },
+      profile: { ...s.profile, score: s.profile.score + points },
     })),
 }))

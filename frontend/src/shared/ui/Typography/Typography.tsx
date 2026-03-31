@@ -17,12 +17,12 @@ export default function Typography({
 }: TypographyProps) {
   const variantClass =
     variant === 'h1'
-      ? 'text-3xl md:text-4xl font-bold tracking-tight'
+      ? 'text-3xl md:text-4xl font-bold tracking-tight text-white'
       : variant === 'h2'
-        ? 'text-xl md:text-2xl font-bold tracking-tight'
+        ? 'text-xl md:text-2xl font-bold tracking-tight text-white'
         : variant === 'small'
-          ? 'text-sm text-white/70'
-          : 'text-base text-white/90'
+          ? 'text-xs text-[#7a7a7a] uppercase tracking-wider'
+          : 'text-sm text-[#cfcfcf]'
 
   const Component = as as any
 

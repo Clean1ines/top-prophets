@@ -7,6 +7,7 @@ type Toast = {
   id: number
   title: string
   description?: string
+  type?: 'success' | 'error' | 'info'
 }
 
 type ToastContextValue = {
@@ -22,10 +23,9 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     setToasts((prev) => {
       const id = Date.now()
       const next = [...prev, { ...toast, id }]
-      // автоудаление
       window.setTimeout(() => {
         setToasts((current) => current.filter((t) => t.id !== id))
-      }, 2600)
+      }, 3000)
       return next
     })
   }, [])
@@ -35,28 +35,33 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   return (
     <ToastContext.Provider value={value}>
       {children}
-      <div className="pointer-events-none fixed inset-0 z-50 flex items-start justify-end p-4 sm:p-6">
-        <div className="flex flex-col gap-2">
+      <div className="pointer-events-none fixed inset-0 z-[100] flex items-end justify-center p-4 pb-28">
+        <div className="flex flex-col-reverse gap-2">
           <AnimatePresence initial={false}>
             {toasts.map((toast) => (
               <motion.div
                 key={toast.id}
-                initial={{ opacity: 0, y: -16, x: 20, scale: 0.96 }}
-                animate={{ opacity: 1, y: 0, x: 0, scale: 1 }}
-                exit={{ opacity: 0, y: -16, x: 20, scale: 0.96 }}
-                transition={{ duration: 0.28, ease: 'easeOut' }}
+                initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.9, y: -20 }}
+                transition={{ duration: 0.2, ease: 'easeOut' }}
                 className={cn(
-                  'pointer-events-auto w-72 sm:w-80 rounded-3xl border border-white/15 bg-white/[0.06] backdrop-blur-xl shadow-[0_18px_45px_rgba(0,0,0,0.55)]',
-                  'px-4 py-3 flex items-start gap-3 text-sm text-white',
+                  'pointer-events-auto min-w-[280px] rounded bg-[#1a1a1a] border shadow-2xl px-4 py-3 flex items-center gap-3',
+                  toast.type === 'error' ? 'border-[#ef4444]/40' : 'border-[#d97706]/40'
                 )}
               >
-                <div className="mt-0.5 flex h-8 w-8 items-center justify-center rounded-2xl bg-amber-400/15 text-amber-300">
-                  <span className="text-lg">⚡</span>
+                <div className={cn(
+                  'flex h-10 w-10 shrink-0 items-center justify-center rounded font-black text-xl',
+                  toast.type === 'error' ? 'bg-[#ef4444] text-white' : 'bg-[#d97706] text-black'
+                )}>
+                  {toast.type === 'error' ? '!' : '✓'}
                 </div>
                 <div className="min-w-0">
-                  <div className="font-semibold">{toast.title}</div>
+                  <div className="font-bold text-sm tracking-tight uppercase text-white">{toast.title}</div>
                   {toast.description ? (
-                    <div className="mt-0.5 text-xs text-white/75">{toast.description}</div>
+                    <div className="mt-0.5 text-[10px] font-mono uppercase tracking-widest text-[#7a7a7a]">
+                      {toast.description}
+                    </div>
                   ) : null}
                 </div>
               </motion.div>

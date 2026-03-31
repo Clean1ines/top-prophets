@@ -10,10 +10,10 @@ export default function StreamTheater() {
   }, [activeMatch])
 
   return (
-    <div className="relative w-full bg-black" style={{ aspectRatio: '16/9' }}>
+    <div className="relative w-full bg-black border-b border-[#1f1f1f]" style={{ aspectRatio: '16/9' }}>
       {/* Video / placeholder */}
       {!activeMatch ? (
-        <div className="absolute inset-0 animate-pulse bg-white/5" />
+        <div className="absolute inset-0 animate-pulse bg-[#121212]" />
       ) : embedUrl ? (
         <iframe
           title="stream-embed"
@@ -24,17 +24,17 @@ export default function StreamTheater() {
           style={{ border: 'none' }}
         />
       ) : (
-        <div className="absolute inset-0 flex items-center justify-center text-white/40 text-sm">
+        <div className="absolute inset-0 flex items-center justify-center text-[#7a7a7a] text-sm">
           Stream unavailable
         </div>
       )}
 
       {/* Bottom gradient overlay */}
-      <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/60 to-transparent pointer-events-none" />
+      <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/80 via-black/30 to-transparent pointer-events-none" />
 
       {/* Match info bar */}
       <div className="absolute inset-x-0 bottom-0 flex items-center gap-3 px-4 py-3 pointer-events-none">
-        <span className="text-sm font-semibold text-white/90 truncate">
+        <span className="text-sm font-medium text-white truncate">
           {activeMatch ? activeMatch.title : '—'}
         </span>
         {activeMatch && (

@@ -3,7 +3,7 @@
     "id": "football_1",
     "title": "Chicago vs Barcelona",
     "sport": "football",
-    "streamUrl": "https://www.youtube.com/embed/Dz_XaMlDt-I?start=355&autoplay=1&mute=1&controls=0&disablekb=1",
+    "streamUrl": "https://www.youtube.com/embed/Dz_XaMlDt-I?start=355&autoplay=1&mute=0&controls=1",
     "timeline": [
       { "minute": 18, "type": "Goal" },
       { "minute": 28, "type": "Goal" },
@@ -14,7 +14,7 @@
     "id": "dota_1",
     "title": "Tundra vs Falcons",
     "sport": "dota2",
-    "streamUrl": "https://www.youtube.com/embed/Z6yqxkoER80?autoplay=1&mute=1&controls=0&disablekb=1",
+    "streamUrl": "https://www.youtube.com/embed/Z6yqxkoER80?autoplay=1&mute=0&controls=1",
     "timeline": [
       { "minute": 1, "type": "First Blood" },
       { "minute": 7, "type": "Roshan Kill" },

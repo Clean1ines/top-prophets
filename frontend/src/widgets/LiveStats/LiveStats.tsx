@@ -24,7 +24,7 @@ export default function LiveStats() {
     }
 
     tick()
-    const t = window.setInterval(tick, 4500)
+    const t = window.setInterval(tick, 2000)
     return () => {
       mounted = false
       window.clearInterval(t)
@@ -47,7 +47,7 @@ export default function LiveStats() {
 
         <div className="rounded-2xl border border-white/10 bg-white/5 p-3">
           <Typography variant="small" className="text-white/65">События матча (для проверки)</Typography>
-          <div className="mt-2 space-y-2 text-sm max-h-48 overflow-y-auto pr-2">
+          <div className="mt-3 space-y-3 text-sm max-h-64 overflow-y-auto pr-2">
             {activeMatch?.timeline ? (
               (activeMatch.timeline as any[]).map((e, i) => (
                 <div key={i} className="flex items-center justify-between gap-3 bg-white/5 rounded-lg p-2">
@@ -66,10 +66,10 @@ export default function LiveStats() {
         </div>
 
         <div className="rounded-2xl border border-white/10 bg-white/5 p-3">
-          <Typography variant="small" className="text-white/65">
-            Рейтинг (глобальный)
+          <Typography variant="small" className="text-accent-gold font-bold uppercase tracking-wider">
+            Global Rankings (Eternal)
           </Typography>
-          <div className="mt-2 space-y-1 text-sm">
+          <div className="mt-3 space-y-2 text-sm">
             {leaderboard.slice(0, 6).map((e, idx) => (
               <div
                 key={e.id}
